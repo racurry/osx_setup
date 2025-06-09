@@ -132,7 +132,62 @@ Uses `lib/terminal_helpers.rb` for consistent UX:
 ### File Structure
 
 - `macos_setup` - Main entry point with password handling
-- `bin/` - Executable scripts and helpers
+- `bin/` - Focused executable scripts (thin wrappers around lib/ classes)
 - `data/` - Configuration files, package lists, and state tracking
-- `lib/` - Ruby helper modules for terminal formatting
+- `lib/` - Reusable Ruby classes and modules containing business logic
 - Tracking state stored in `data/.meta/` (git-ignored)
+
+### Code Organization Principles
+
+- **`bin/` scripts are focused**: Each script has one clear purpose (install apps, sync dotfiles, etc.)
+- **`lib/` contains the logic**: Business logic lives in reusable classes that bin/ scripts call
+- **Thin wrappers**: bin/ scripts should be minimal - just instantiate lib/ classes and call methods
+- **Separation of concerns**: CLI interface (bin/) separate from business logic (lib/)
+
+### Library Architecture
+
+The `lib/` directory implements a unified, namespaced architecture centered around a single coordinator class:
+
+- **`lib/macos_setup.rb`**: Single entry point coordinator class that orchestrates all setup operations
+- **`lib/macos_setup/`**: All domain-specific functionality organized under the `MacOSSetup::` namespace
+  - **`app_installer.rb`**: Coordinates application installation (shell apps, Homebrew, App Store)
+  - **`package_manager.rb`**: Coordinates development package management (asdf, npm, gems, pip)
+  - **Subdirectories**: Each coordinator delegates to specialized classes in its own subdirectory
+
+**Design Goals:**
+- **Single Source of Truth**: All functionality accessible through one `MacOSSetup` class
+- **Logical Grouping**: Related functionality grouped by domain (apps vs packages vs system config)
+- **Consistent Namespacing**: Everything under `MacOSSetup::` prevents naming conflicts
+- **Testability**: Business logic separated into focused, injectable classes
+- **Extensibility**: Easy to add new domains (dotfiles, system preferences, etc.) following the same pattern
+
+**Usage Pattern:**
+```ruby
+# bin scripts instantiate the coordinator and call domain methods
+setup = MacOSSetup.new
+setup.install_apps(:shell, :brew)
+setup.manage_packages('--update', '--verbose')
+```
+
+### Testing Strategy
+
+The project uses a lightweight testing approach focused on verifying lib/ functionality:
+
+- **`test/` directory**: Contains minimal Ruby test files for lib/ class verification
+- **Smoke tests**: Quick tests that verify classes load correctly and methods exist
+- **Non-destructive**: Tests avoid actual system modifications (folder creation, package installation)
+- **Rapid feedback**: Fast execution to catch refactoring errors during development
+
+**Test Pattern:**
+```ruby
+# test/test_feature.rb - Verify lib class functionality
+require_relative '../lib/macos_setup'
+setup = MacOSSetup.new
+puts setup.respond_to?(:method_name) ? "✅ Method exists" : "❌ Method missing"
+```
+
+**When to add tests:**
+- After major refactoring of lib/ classes
+- When extracting logic from bin/ scripts to lib/
+- To verify new public methods work correctly
+- Before complex changes to ensure existing functionality isn't broken

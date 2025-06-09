@@ -28,6 +28,6 @@ find_ruby_version() {
     fi
 }
 
-# Set Ruby version and call full_setup with all arguments
+# Set Ruby version and call setup_everything method with all arguments
 export ASDF_RUBY_VERSION=$(find_ruby_version)
-exec bin/full_setup "$@"
+exec ruby -e "require_relative 'lib/macos_setup'; MacOSSetup.new.setup_everything(*ARGV)" -- "$@"

@@ -3,8 +3,9 @@
 # TODO: extract the entrypoint logic into its own script
 
 require 'fileutils'
-require_relative '../lib/terminal_helpers.rb'
-require_relative '../lib/sudo_manager.rb'
+require_relative '../lib/macos_setup.rb'
+
+include MacOSSetup::TerminalHelpers
 
 BIN_PATH = "./bin"
 DATA_PATH="./data"
@@ -79,9 +80,6 @@ def run_setup(options)
   pputs "👾 Setting up this bad boy here", style: :bold, color: :cyan
   horizontal_rule(:cyan)
 
-  # This is just bullshitting
-  system("#{BIN_PATH}/cool_art")
-
   # Make sure we have the latest
   system("bin/update_to_latest")
 
@@ -109,7 +107,8 @@ def main(options)
     exec "bin/hygiene"
   else
     # Ensure sudo is available for the full setup
-    unless SudoManager.ensure_sudo_available
+    sudo_manager = MacOSSetup::SudoManager.new
+    unless sudo_manager.ensure_sudo_available
       puts "Setup cancelled - administrator authentication required."
       exit 1
     end

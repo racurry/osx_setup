@@ -1,13 +1,5 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/terminal_helpers.rb'
+require_relative '../lib/macos_setup'
 
-# Get the directory where this script is located (should be bin/)
-# Go up one level to get the repo root
-REPO_DIRECTORY = File.dirname(File.dirname(File.realpath(__FILE__)))
-
-section_header "🔄 Pulling latest config"
-Dir.chdir(REPO_DIRECTORY) do
-  system 'git pull --rebase'
-end
-section_footer "Done"
+MacOSSetup.new.update_to_latest
